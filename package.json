@@ -1,0 +1,20 @@
+{ "name": "ghabuild-minecraft-mod-editsign",
+  "version": "0.1.0",
+  "description": "Scripts for building EditSign on GitHub Actions.",
+
+  "author": "M.K. (https://github.com/mk-pmb)",
+  "homepage": "https://github.com/mk-pmb/ghabuild-minecraft-mod-editsign/#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mk-pmb/ghabuild-minecraft-mod-editsign.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mk-pmb/ghabuild-minecraft-mod-editsign/issues"
+  },
+  "contributors": [],
+
+  "private": true, "license": "GPL-3.0-only",
+
+
+  "engines": {}
+}
