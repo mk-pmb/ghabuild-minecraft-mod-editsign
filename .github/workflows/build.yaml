@@ -1,0 +1,96 @@
+%YAML 1.1
+# ^-- ATTN: [2019-12-31] If you use a later version, Github will fail
+#     with a bogus error message "You have an error in your yaml syntax".
+# -*- coding: UTF-8, tab-width: 4 -*-
+---
+
+on:
+    push:
+        branches:
+          - 'build-**'
+          - 'debug-**'
+
+env:
+    INVERSE_REBASE_ONTO: '' # e.g. master
+
+jobs:
+    prep:
+        name: 'Prepare build matrix'
+        runs-on: ubuntu-latest
+        steps:
+          - name: 'Checkout rebuilder files'
+            uses: actions/checkout@v3
+          - run: './build.sh inverse_rebase'
+          - run: './build.sh clone_mod_repo --bare'
+          - run: './build.sh generate_matrix'
+            id: mx
+          - name: 'Preview the buid matrix, pretty-printed.'
+            run: './build.sh summarize_step_env_vars MX'
+            env:
+                MX: 'Build Matrix <json> ${{ toJson(fromJson(steps.mx.outputs.mx)) }}'
+        outputs:
+            mx: '${{ steps.mx.outputs.mx }}'
+            opt: '${{ steps.mx.outputs.opt }}'
+
+    build:
+        needs: prep
+        runs-on: ubuntu-latest
+
+        strategy:
+            fail-fast: false
+            max-parallel: '${{ fromJson(needs.prep.outputs.opt).concurrency }}'
+            matrix: '${{ fromJson(needs.prep.outputs.mx) }}'
+
+        steps:
+          - name: 'Checkout rebuilder files'
+            uses: actions/checkout@v3
+
+          - run: './build.sh inverse_rebase'
+
+          - run: './build.sh shellify_build_matrix_entry'
+            env:
+                JSON: '${{ toJSON(matrix.b) }}'
+
+          - run: './build.sh clone_mod_repo'
+            env:
+                MOD_REF: '${{ matrix.b.modref }}'
+
+          - run: './verify_license.sh'
+            if: '${{ matrix.b.artifact }}'
+            env:
+                EXPECTED_LICENSE: '${{ matrix.b.license }}'
+
+          - run: './build.sh apply_hotfixes'
+
+          - name: 'Set up JDK'
+            if: '${{ matrix.b.java }}'
+            uses: actions/setup-java@v3
+            with:
+                distribution: 'temurin'
+                java-version: '${{ matrix.b.java }}'
+
+          - name: 'Set up gradle'
+            if: '${{ matrix.b.java }}'
+            uses: gradle/gradle-build-action@v2
+            with:
+                generate-job-summary:
+                    '${{ !!matrix.b.gradle_default_summary }}'
+
+          - name: 'Build the mod'
+            run: './build.sh gradle'
+            if: '${{ matrix.b.java }}'
+
+          - name: 'Grab the relevant binaries'
+            run: './build.sh grab'
+            if: '${{ matrix.b.artifact }}'
+
+          - name: 'Upload mod file'
+            if: '${{ matrix.b.artifact }}'
+            uses: actions/upload-artifact@v3
+            with:
+                name: '${{ matrix.b.artifact }}'
+                path: jar-unpacked
+                if-no-files-found: error
+                retention-days: 1 # Rather, re-upload them as a release.
+
+...
