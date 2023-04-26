@@ -46,6 +46,20 @@ function status_report_tall_gapped_on_ci () {
 }
 
 
+function read_build_matrix_entry () {
+  local SED='
+    s~^ *"([^"]+)": ~\1\n~
+    /\n/!d
+    s~,$~~
+    s~\x22|\x27~~g
+    s~^~[\x27~
+    s~\n~\x27]=\x27~
+    s~$~\x27~
+    '
+  eval "MX=( $(sed -rf <(echo "$SED") -- tmp.matrix_entry.json) )"
+}
+
+
 
 
 

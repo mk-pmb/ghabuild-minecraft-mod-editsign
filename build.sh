@@ -175,6 +175,7 @@ function build_apply_hotfixes () {
 
 
 function build_gradle () {
+  # local -A MX=(); read_build_matrix_entry || return $?
   cd -- mod-repo || return $?
 
   local GHL="../$AUX_META_DIR"/git_head.txt
@@ -192,6 +193,9 @@ function build_gradle () {
 
 
 function build_grab () {
+  cp --no-clobber --no-target-directory \
+    -- {tmp.,"$AUX_META_DIR"/build_}matrix_entry.json || return $?
+
   local OUT='mod-repo/build/libs'
   vdo delete_confusing_jars || return $?
 
