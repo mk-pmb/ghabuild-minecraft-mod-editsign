@@ -188,7 +188,16 @@ function build_gradle () {
     --scan
     )
   vdo ./gradlew clean "${GW_OPT[@]}" || true
-  vdo ./gradlew build "${GW_OPT[@]}" || return $?
+  local GR_LOG='../tmp.gradlew.log'
+  VDO_TEE="$GR_LOG" vdo ./gradlew build "${GW_OPT[@]}" && return 0
+  local GR_RV=$?
+
+  local GR_HL='../tmp.gradlew.hl.log'
+  "$SELFPATH"/lib/gradle_log_highlights.sed "$GR_LOG" | tee -- "$GR_HL"
+  fmt_markdown_details_file "Gradle failed, rv=$GR_RV" text "$GR_HL" \
+    >>"$GITHUB_STEP_SUMMARY"
+
+  return "$GR_RV"
 }
 
 

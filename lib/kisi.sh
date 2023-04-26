@@ -5,8 +5,9 @@
 function vdo () {
   echo "=== run: $* ==="
   SECONDS=0
-  "$@"
-  local RV=$?
+  "$@" |& tee -- $VDO_TEE
+  local RV="${PIPESTATUS[*]}"
+  let RV="${RV// /+}"
   echo "=== done: $*, rv=$RV, took $SECONDS sec ==="
   return $RV
 }
