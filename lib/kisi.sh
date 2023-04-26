@@ -31,6 +31,23 @@ function ghstep_dump_file () {
 }
 
 
+function status_report_tall_gapped_on_ci () {
+  local M='+success'
+  [ "$1" == 0 ] || M="-FAIL! rv=$1"
+  local B="${M:0:1}"
+  M="# ${M:1} #"
+  M="${M//#/#####}"
+  M="${M//#/$B}"
+  if [ "$USER" == runner -a "$1" != 0 ]; then
+    M="~~~$M"$'\n~~~~~~~~~~~~~~~~~~~~'
+    M="${M//\~/$B$'\n'}"
+  fi
+  echo "$M"
+}
+
+
+
+
 
 
 

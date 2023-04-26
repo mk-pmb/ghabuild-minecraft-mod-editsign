@@ -19,6 +19,9 @@ function build_init () {
     || local GITHUB_STEP_SUMMARY='tmp.github_stepsum.md'
 
   build_"$@"
+  local RV=$?
+  status_report_tall_gapped_on_ci "$RV"
+  return "$RV"
 }
 
 
