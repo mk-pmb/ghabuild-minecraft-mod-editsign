@@ -1,0 +1,29 @@
+
+Some versions of the binaries are built using files from Mojang.
+There are some notes about this in the MCPConfig docs:
+https://github.com/MinecraftForge/MCPConfig/blob/master/Mojang.md
+
+My (mk-pmb's) private, non-lawyer opinion, at 2023-04-23:
+
+As far as I understand those notes, the Mojang license is problematic
+for libraries used in mods, but not for the resulting mods themselves.
+Thus, EditSign should not be affected.
+
+Additionally, I understand "obfuscation logs" to mean the diagnostic
+output of a fully automated process whose purpose is to take parts
+of Minecraft code and remove the expressions of artistic choices that
+had been in there, with no additional creative input in that process.
+I have strong doubts if the result of such a process would even be
+protected under EU law, so I might even be entitled to redistribute them.
+(Which is moot because, as far as I understand the build process,
+I don't distribute them anyway.)
+
+I conclude from Mojangs behavior in the past few years that they intend
+to support the Minecraft modding community. They probably intended to
+allow the community to build and distribute these mods,
+even if the wording of their license is not entirely clear
+about some of the edge cases.
+
+However, I'm not a lawyer and I cannot provide legal counsel on this,
+so please form your own opinion on whether the Mojang license problem
+affects you.
