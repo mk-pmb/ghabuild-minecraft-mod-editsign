@@ -11,7 +11,7 @@ on:
           - 'debug-**'
 
 env:
-    INVERSE_REBASE_ONTO: '' # e.g. master
+    INVERSE_REBASE_ONTO: 'experimental'
 
 jobs:
     prep:
