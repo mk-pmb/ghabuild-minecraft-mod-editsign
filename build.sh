@@ -10,6 +10,14 @@ function build_init () {
   source -- lib/kisi.sh --lib || return $?
   source -- lib/mdtbl_read.sh --lib || return $?
 
+  local UNJAR='jar-unpacked'
+  local AUX_META_DIR="$UNJAR/META-INF"
+  mkdir --parents -- "$AUX_META_DIR" || return $?
+
+  [ -n "$GITHUB_OUTPUT" ] || local GITHUB_OUTPUT='tmp.github_output.env'
+  [ -n "$GITHUB_STEP_SUMMARY" ] \
+    || local GITHUB_STEP_SUMMARY='tmp.github_stepsum.md'
+
   build_"$@"
 }
 
@@ -53,16 +61,42 @@ function build_inverse_rebase_stage2 () {
 }
 
 
+function build_find_mod_repo_url () {
+  <"$SELFPATH"/README.md sed -nrf <(echo '
+    s~^\* __Mod repo:__( |$)~~;T
+    /\S/!N
+    s~^\s+~~
+    s~\s+$~~
+    p
+    ')
+}
+
+
 function build_clone_mod_repo () {
-  local GIT_ARGS=(
-    clone
-    --no-recurse-submodules
+  local BARE=
+  if [ "$1" == --bare ]; then BARE="$1"; shift; fi
+  vdo git init mod-repo $BARE || return $?
+
+  cd -- mod-repo || return $?
+  local URL="$(build_find_mod_repo_url)"
+  [ -n "$URL" ] || return 4$(echo 'E: Unable to detect mod repo URL!' >&2)
+  vdo git remote add origin "$URL" || return $?
+  local F_OPT=(
+    --tags
     --depth=1
-    "$@"
-    https://github.com/Rakambda/EditSign.git
-    mod-repo
+    --no-recurse-submodules
     )
-  git "${GIT_ARGS[@]}" || return $?
+  vdo git fetch "${F_OPT[@]}" origin || return $?
+
+  # Unfortunately, EditSign has no master or main branch, so we
+  # have to maintain our own default:
+  [ -n "$MOD_REF" ] || local MOD_REF='refs/remotes/origin/minecraft/1.19.4'
+  vdo git branch --force mod-ref "$MOD_REF" || return $?
+
+  if [ -z "$BARE" ]; then
+    vdo git checkout --force mod-ref || return $?
+    vdo git reset --hard HEAD || return $?
+  fi
 }
 
 
@@ -134,6 +168,54 @@ function build_shellify_build_matrix_entry () {
 
 function build_apply_hotfixes () {
   echo 'Stub!'
+}
+
+
+function build_gradle () {
+  cd -- mod-repo || return $?
+
+  local GHL="../$AUX_META_DIR"/git_head.txt
+  [ -f "$GHL" ] || git log -n 1 >"$GHL" || return $?
+
+  chmod a+x gradlew || return $?
+  local GW_OPT=(
+    --stacktrace
+    --info
+    --scan
+    )
+  vdo ./gradlew clean "${GW_OPT[@]}" || true
+  vdo ./gradlew build "${GW_OPT[@]}" || return $?
+}
+
+
+function build_grab () {
+  local OUT='mod-repo/build/libs'
+  vdo delete_confusing_jars || return $?
+
+  echo "=== Detecting JAR files… ==="
+  local JAR="$(cd -- "$OUT" && find -type f -name '*.jar' -printf '%f\n')"
+  nl -ba <<<"$JAR"
+  case "$JAR" in
+    '' ) echo "E: Found none!" >&2; return 3;;
+    *$'\n'* ) echo 'E: Found too many candidates!' >&2; return 3;;
+    EditSign-*.jar ) ;;
+    * ) echo "E: Unexpected naming schema!" >&2; return 3;;
+  esac
+
+  echo "$JAR" >"$AUX_META_DIR"/orig_build_filename.txt || return $?
+  vdo unzip -d "$UNJAR" -- "$OUT/$JAR" || return $?
+  vdo ls -l -- "$UNJAR" || return $?
+}
+
+
+function delete_confusing_jars () {
+  local LIST=(
+    "$OUT"/EditSign-*-{sources,deobf}.jar
+    )
+  local ITEM=
+  for ITEM in "${LIST[@]}"; do
+    [ ! -f "$ITEM" ] || rm --verbose -- "$ITEM" || return $?
+  done
 }
 
 
