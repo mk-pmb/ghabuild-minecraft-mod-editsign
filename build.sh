@@ -29,6 +29,27 @@ function build_inverse_rebase () {
 }
 
 
+function build_inverse_rebase_stage2 () {
+  local BRAN="${1:-$INVERSE_REBASE_ONTO}"
+  echo "--- Inverse rebase stage 2 -> '$BRAN' ---"
+  vdo git branch --verbose || return $?
+  local ORIG="$(git rev-parse HEAD)"
+  vdo git log --oneline "$BRAN" || return $?
+  vdo git log --oneline "$ORIG" || return $?
+
+  local TREE='git log --oneline --graph --decorate --all'
+  vdo $TREE || return $?
+  vdo git reset --hard "$BRAN" || return $?
+
+  # Identity is required before we can rebase:
+  git config --global user.name   'CI'
+  git config --global user.email  'ci@example.net'
+  vdo git rebase -- "${ORIG:0:7}" || return $?
+
+  vdo $TREE || return $?
+}
+
+
 function build_clone_mod_repo () {
   local GIT_ARGS=(
     clone
