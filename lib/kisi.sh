@@ -26,6 +26,9 @@ function fmt_markdown_details_file () {
 }
 
 
+function ghstep_dump_file () {
+  fmt_markdown_details_file "$@" >>"$GITHUB_STEP_SUMMARY" || return $?
+}
 
 
 

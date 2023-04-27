@@ -6,7 +6,10 @@ function build_init () {
   export LANG{,UAGE}=en_US.UTF-8  # make error messages search engine-friendly
   local SELFPATH="$(readlink -m -- "$BASH_SOURCE"/..)"
   cd -- "$SELFPATH" || return $?
+  source -- lib/json.sh --lib || return $?
   source -- lib/kisi.sh --lib || return $?
+  source -- lib/mdtbl_read.sh --lib || return $?
+
   build_"$@"
 }
 
@@ -70,7 +73,43 @@ function build_generate_matrix () {
     $s~$~\n}~
     ') >>"$GITHUB_OUTPUT" || return $?
 
-  echo 'mx={"b":[{"#": "placeholder"}]}' >>"$GITHUB_OUTPUT" || return $?
+  local M="$(<matrix.md mdtbl_for_each_row build_fmt_matrix_line)"
+  [ -n "$M" ] || M='[ { "": "placeholder" } ]'
+  local J='tmp.matrix.json'
+  <<<"$M" vdo tee -- "$J" || return $?
+  <<<'mx={ "b": '"${M//$'\n'/ }"' }' vdo tee --append \
+    -- "$GITHUB_OUTPUT" || return $?
+}
+
+
+function build_fmt_matrix_line () {
+  local -A M=()
+  eval "M=( $1 )"
+  [ "${M[#]}" == 1 ] && echo '['
+
+  local T="${M[tag]}"
+  M[modref]="refs/tags/$T"
+
+  local L=
+  case "${M[tag]}" in
+    EditSign-[A-Z]*-[0-9]* )
+      L="${M[tag],,}"
+      L="${L#*-}"
+      L="${L%%-*}"
+      ;;
+  esac
+  local A="editsign-v${M[modver]}-mc${M[mcr]}-$L"
+  A="${A%-}.jar"
+  M[artifact]="$A"
+
+  naive_jsonify_oneline M '{' ' }' \
+    modver mcr license java tag modref artifact || return $?
+  if [ "${M[#]}" == "${M[##]}" ]; then
+    echo
+    echo ']'
+  else
+    echo ','
+  fi
 }
 
 
@@ -81,14 +120,15 @@ function build_summarize_step_env_vars () {
     [ -n "$TEXT" ] || continue
     TITLE="${TEXT%% <*}"; TEXT="${TEXT#* <}"
     FMT="${TEXT%%> *}"; TEXT="${TEXT#*> }"
-    fmt_markdown_details_file "$TITLE" "${FMT:-text}" <<<"$TEXT" \
-      >>"$GITHUB_STEP_SUMMARY" || return $?
+    ghstep_dump_file "$TITLE" "${FMT:-text}" <<<"$TEXT" || return $?
   done
 }
 
 
 function build_shellify_build_matrix_entry () {
   echo "$JSON" >tmp.matrix_entry.json
+  <<<"$JSON" naive_json_to_shell_dict | tee -- tmp.matrix_entry.dict \
+    | ghstep_dump_file "Build matrix entry as bash dict" bash || return $?
 }
 
 
