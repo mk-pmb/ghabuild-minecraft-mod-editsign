@@ -1,5 +1,7 @@
-﻿
-Build matrix placeholder
-------------------------
+﻿<!-- -*- tab-width: 4 -*- -->
 
-Replace me as described in `README.md`.
+| modver    | mcr       | license       | java | tag                           |
+|---------- |---------- |-------------- | -----|------------------------------ |
+| 2.0.0     | 1.15.2    | GPL-3.0-only  |    8 | EditSign-Fabric-1.15.2-2.0.0  |
+| 2.0.0     | 1.15.2    | GPL-3.0-only  |   17 | EditSign-Fabric-1.15.2-2.0.0  |
+
