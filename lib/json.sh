@@ -15,10 +15,10 @@ function naive_jsonify_oneline () {
     echo -n '{}'
     return 0
   fi
-  local D="$1"; shift
-  local B="$1"; shift
-  local A="$1"; shift
-  local K= V=
+  local D="$1"; shift # <d>ictionary
+  local B="$1"; shift # print this <b>efore key/value pairs
+  local A="$1"; shift # print this <a>fter key/value pairs
+  local K= V= # <k>ey/<v>alue pair
   for K in "$@"; do
     V=
     eval 'V="${'"$D"'["$K"]}"'
