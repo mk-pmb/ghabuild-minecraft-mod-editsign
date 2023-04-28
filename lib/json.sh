@@ -4,8 +4,16 @@
 
 function naive_json_to_shell_dict () {
   sed -nrf <(echo '
-    s~\x27|\\~~g
-    s~^ *"([^"]+)": *("[^"]*"|[0-9]+),?$~[\x27\1\x27]=\x27\2\x27~p
+    s~\\|\a~~g
+    s~\x27+~\a& ~g
+    s~^ *("[^"]+"): *("[^"]*"|[0-9a-z.-]+),?$~[\n\1]=\n\2~
+    /\n/{
+      s~\n"([A-Za-z0-9_:./+-]+)"~\1~g
+      s~\n"([^"]*)"~\x27\1\x27~g
+      s~\a(\S+) ~\x27"\1"\x27~g
+      s~\n([0-9])~\1~g
+      p
+    }
     ') -- "$@"
 }
 
@@ -43,4 +51,4 @@ function naive_jsonify_oneline () {
 
 
 
-return 0
+[ "$1" == --lib ] && return 0; "$@"; exit $?
