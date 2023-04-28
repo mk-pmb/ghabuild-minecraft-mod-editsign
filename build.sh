@@ -124,23 +124,22 @@ function build_fmt_matrix_line () {
   eval "M=( $1 )"
   [ "${M[#]}" == 1 ] && echo '['
 
-  local T="${M[tag]}"
-  M[modref]="refs/tags/$T"
-
-  local L=
-  case "${M[tag]}" in
+  local TAG="${M[tag]}"
+  local ARTI=
+  case "$TAG" in
     EditSign-[A-Z]*-[0-9]* )
-      L="${M[tag],,}"
-      L="${L#*-}"
-      L="${L%%-*}"
+      ARTI="${M[tag],,}"
+      ARTI="${ARTI#*-}"
+      ARTI="-${ARTI%%-*}"
       ;;
   esac
-  local A="editsign-v${M[modver]}-mc${M[mcr]}-$L"
-  A="${A%-}.jar"
-  M[artifact]="$A"
+  local ARTI="editsign-v${M[modver]}-mc${M[mcr]}$ARTI.jar"
 
   naive_jsonify_oneline M '{' ' }' \
-    modver mcr license java tag modref artifact || return $?
+    modver mcr license java tag \
+    artifact="$ARTI" \
+    modref="refs/tags/$TAG" \
+    || return $?
   if [ "${M[#]}" == "${M[##]}" ]; then
     echo
     echo ']'

@@ -21,7 +21,10 @@ function naive_jsonify_oneline () {
   local K= V= # <k>ey/<v>alue pair
   for K in "$@"; do
     V=
-    eval 'V="${'"$D"'["$K"]}"'
+    case "$K" in
+      *=* ) V="${K#*=}"; K="${K%%=*}";;
+      * ) eval 'V="${'"$D"'["$K"]}"';;
+    esac
     case "$V" in
       '' | *[^0-9]* ) V='"'"$V"'"';;
     esac
