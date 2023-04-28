@@ -110,10 +110,17 @@ function build_generate_matrix () {
     $s~$~\n}~
     ') >>"$GITHUB_OUTPUT" || return $?
 
-  local M="$(<matrix.md mdtbl_for_each_row build_fmt_matrix_line)"
+  local M=
+  for M in matrix.override.{json,md} matrix.md ''; do
+    [ -f "$M" ] && break
+  done
+  echo "D: Reading build matrix from: $M"
+  case "$M" in
+    *.json ) M="$(LANG=C sed -re '1s~^\xEF\xBB\xBF~~' -- "$M")";;
+    *.md ) M="$(<"$M" mdtbl_for_each_row build_fmt_matrix_line)";;
+  esac
   [ -n "$M" ] || M='[ { "": "placeholder" } ]'
-  local J='tmp.matrix.json'
-  <<<"$M" vdo tee -- "$J" || return $?
+  <<<"$M" vdo tee -- 'tmp.matrix.json' || return $?
   <<<'mx={ "b": '"${M//$'\n'/ }"' }' vdo tee --append \
     -- "$GITHUB_OUTPUT" || return $?
 }
