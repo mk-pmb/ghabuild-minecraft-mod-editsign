@@ -140,10 +140,13 @@ function build_fmt_matrix_line () {
       ARTI="-${ARTI%%-*}"
       ;;
   esac
-  local ARTI="editsign-v${M[modver]}-mc${M[mcr]}$ARTI.jar"
+  local ARTI="j${M[java]}-editsign-v${M[modver]}-mc${M[mcr]}$ARTI.jar"
+
+  [ "${M[java]}" -ge 16 ] || build_fmt_matrix_line "$1
+    [java]=16 ['#']=4 ['##']=8"
 
   naive_jsonify_oneline M '{' ' }' \
-    modver mcr license java tag \
+    modver java mcr license tag \
     artifact="$ARTI" \
     modref="refs/tags/$TAG" \
     || return $?
