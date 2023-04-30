@@ -9,6 +9,7 @@ function build_init () {
   source -- lib/json.sh --lib || return $?
   source -- lib/kisi.sh --lib || return $?
   source -- lib/mdtbl_read.sh --lib || return $?
+  source -- lib/parse_mod_tag.sh --lib || return $?
 
   local UNJAR='jar-unpacked'
   local AUX_META_DIR="$UNJAR/META-INF"
@@ -106,9 +107,11 @@ function build_clone_mod_repo () {
 function build_generate_matrix () {
   sed -nre 's~^(\s*)([a-z][^: ]*):~  \1"\2":~p' -- ci.cfg | sed -rf <(echo '
     $!s~$~,~
-    1s~^ ~opt={~
+    1s~^ ~{~
     $s~$~\n}~
-    ') >>"$GITHUB_OUTPUT" || return $?
+    ') | vdo tee -- tmp.ci_opt.json || return $?
+  echo "opt=$(tr -s ' \n' ' ' <tmp.ci_opt.json
+    )" >>"$GITHUB_OUTPUT" || return $?
 
   local M=
   for M in matrix.override.{json,md} matrix.md ''; do
@@ -120,9 +123,11 @@ function build_generate_matrix () {
     *.md ) M="$(<"$M" mdtbl_for_each_row build_fmt_matrix_line)";;
   esac
   [ -n "$M" ] || M='[ { "": "placeholder" } ]'
-  <<<"$M" vdo tee -- 'tmp.matrix.json' || return $?
-  <<<'mx={ "b": '"${M//$'\n'/ }"' }' vdo tee --append \
-    -- "$GITHUB_OUTPUT" || return $?
+  <<<"$M" vdo tee -- tmp.matrix.json || return $?
+  echo 'mx={ "b": '"$(tr -s ' \n' ' ' <tmp.matrix.json
+    ) }" >>"$GITHUB_OUTPUT" || return $?
+
+  nl -ba "$GITHUB_OUTPUT"
 }
 
 
@@ -130,25 +135,18 @@ function build_fmt_matrix_line () {
   local -A M=()
   eval "M=( $1 )"
   [ "${M[#]}" == 1 ] && echo '['
-
-  local TAG="${M[tag]}"
-  local ARTI=
-  case "$TAG" in
-    EditSign-[A-Z]*-[0-9]* )
-      ARTI="${M[tag],,}"
-      ARTI="${ARTI#*-}"
-      ARTI="-${ARTI%%-*}"
-      ;;
-  esac
-  local ARTI="j${M[java]}-editsign-v${M[modver]}-mc${M[mcr]}$ARTI.jar"
+  parse_mod_tag || return $?
 
   [ "${M[java]}" -ge 16 ] || build_fmt_matrix_line "$1
     [java]=16 ['#']=4 ['##']=8"
 
+  M[hotfixes]="$("$SELFPATH"/hotfix.sh decide "$1")"
+
   naive_jsonify_oneline M '{' ' }' \
     modver java mcr license tag \
-    artifact="$ARTI" \
-    modref="refs/tags/$TAG" \
+    artifact \
+    modref="refs/tags/${M[tag]}" \
+    hotfixes \
     || return $?
   if [ "${M[#]}" == "${M[##]}" ]; then
     echo
@@ -179,17 +177,13 @@ function build_shellify_build_matrix_entry () {
 
 
 function build_apply_hotfixes () {
-  echo 'Stub!'
+  vdo ./hotfix.sh apply --from-matrix || return $?
 }
 
 
 function build_gradle () {
   # local -A MX=(); read_build_matrix_entry || return $?
   cd -- mod-repo || return $?
-
-  local GHL="../$AUX_META_DIR"/git_head.txt
-  [ -f "$GHL" ] || git log -n 1 >"$GHL" || return $?
-
   chmod a+x gradlew || return $?
   local GW_OPT=(
     --stacktrace

@@ -73,8 +73,10 @@ License
 -------
 
 * Build scripts in this repo: [GPL-3.0-only](LICENSE.txt).
-* Old versions of the mod are GPL-3.0-only.
-* Modern versions of the mod usually are LGPL-3.0-only.
+  * Files with the word "hotfix" in their name are dual-licensed with
+    additional LGPL of the same version.
+* Old versions of the mod itself (not hosted here) are GPL-3.0-only.
+  * Modern versions of the mod usually are LGPL-3.0-only.
 * Each artifact built contains text files with license information about
   the other files in the artifact.
 * ⚠ Some versions of the binaries are built using files from Mojang.
