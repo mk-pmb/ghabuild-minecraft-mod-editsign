@@ -23,7 +23,9 @@ function fixes_main () {
 function fixes_decide () {
   local -A M=()
   eval "M=( $1 )"
-  local FIXES=
+  local FIXES='
+    Fix_version_meta
+    '
 
   decide_group1 || return $?
 
@@ -111,6 +113,15 @@ function fixes_multi () {
     echo "* useless patches: $USELESS_F ($USELESS_N)"
   ) | tee --append -- "$GITHUB_STEP_SUMMARY"
   echo >>"$GITHUB_STEP_SUMMARY"
+}
+
+
+function fix_version_meta () {
+  local VER="${M[artifact#*-]}"
+  VER="${VER%.zip}"
+  VER="${VER%.jar}"
+  sed -re 's~^version=0\.0\.\S+$~'"$VER~" \
+    -i -- gradle.properties || return $?
 }
 
 
