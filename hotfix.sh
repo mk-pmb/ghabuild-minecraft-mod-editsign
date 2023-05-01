@@ -34,6 +34,24 @@ function fixes_decide () {
 function decide_group1 () {
   # case "${M[modver]}:${M[mcr]}:${M[loader]}" in
   case "${M[tag]}" in
+    '1.15.1-2.0.0+7' | \
+    '1.15.2-2.0.0+7' | \
+    '1.15.2-2.1.0+1' | \
+    '1.15-2.0.0+6' | \
+    '1.16.1-2.0.0+7' | \
+    'EditSign-Forge-1.16.1-2.0.1' | \
+    'EditSign-Forge-1.16.1-2.1.0' | \
+    'EditSign-Forge-1.16.1-2.1.1' | \
+    'EditSign-Forge-1.16.1-2.1.3' | \
+    'EditSign-Forge-1.16.2-2.1.1' | \
+    'EditSign-Forge-1.16.2-2.1.2' | \
+    'EditSign-Forge-1.16.2-2.1.3' | \
+    'EditSign-Forge-1.16.3-2.1.2' | \
+    'EditSign-Forge-1.16.3-2.1.3' | \
+    'EditSign-Forge-1.16.4-2.1.3' | \
+    'EditSign-Forge-1.16.4-2.1.4' | \
+    'EditSign-Forge-1.16.4-2.2.0' | \
+    'EditSign-Forge-1.16.5-2.2.0' | \
     . ) FIXES+=' #confirmed:230501'; return 0;;
   esac
 
